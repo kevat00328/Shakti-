@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shakti Automobile – Accessories Stock Manager</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f1ea;--card:#fff;--tx:#1c1b18;--mu:#6b675e;--ac:#b4231a;--bd:#ddd7c8;--ok:#1b7a3d;--wa:#c26a00;--er:#c0261c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171613;--card:#242320;--tx:#f1ede3;--mu:#a19c8f;--ac:#e5473d;--bd:#3a3832;--ok:#4cc27a;--wa:#f0a03a;--er:#ff6b60}}
+:root[data-theme="dark"]{--bg:#171613;--card:#242320;--tx:#f1ede3;--mu:#a19c8f;--ac:#e5473d;--bd:#3a3832;--ok:#4cc27a;--wa:#f0a03a;--er:#ff6b60}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:84px}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--ac);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+header b{font-size:17px}header select{font-size:14px;padding:6px;border-radius:8px;border:0}
+main{padding:12px;max-width:640px;margin:auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{text-align:center}.stat small{color:var(--mu);font-size:11px;letter-spacing:.5px}.stat div{font-size:28px;font-weight:800}
+button,.btn{min-height:52px;border:0;border-radius:12px;background:var(--ac);color:#fff;font-size:16px;font-weight:700;padding:0 16px;width:100%}
+button.s{background:var(--card);color:var(--tx);border:1px solid var(--bd)}button.sm{min-height:44px;width:auto}
+input,select,textarea{width:100%;min-height:50px;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);margin:4px 0 10px}
+label{font-size:13px;color:var(--mu);font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}.mu{color:var(--mu);font-size:13px}
+.pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;color:#fff}.in{background:var(--ok)}.low{background:var(--wa)}.out{background:var(--er)}
+.big{font-size:26px;font-weight:800}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav a{flex:1;text-align:center;padding:9px 0;font-size:12px;color:var(--mu);font-weight:600}nav a span{display:block;font-size:22px}nav a.on{color:var(--ac)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px}.chips button{min-height:40px;width:auto;white-space:nowrap}
+#modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;z-index:9}#modal>div{background:var(--card);width:100%;max-width:640px;margin:auto;border-radius:18px 18px 0 0;padding:16px}
+#toast{position:fixed;top:70px;left:12px;right:12px;padding:14px;border-radius:12px;color:#fff;font-weight:600;display:none;z-index:10;text-align:center}
+h3{margin:4px 0 10px}
+</style></head><body>
+<header><b>🏍️ Shakti Accessories</b><select id="role" onchange="setRole(this.value)"><option>Admin</option><option>Manager</option><option>Staff</option></select></header>
+<div id="toast"></div><main id="m"></main><div id="modal"></div>
+<nav id="nav"></nav>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY='shakti_v1';let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+function seed(){
+ const A=[['Yezdi','Roadster','Leg Guard','YRD-LG-001',5,'Rack A1',20],['Yezdi','Roadster','Body Cover','YRD-BC-001',5,'Rack A2',12],['Yezdi','Roadster','Back Rest','YRD-BR-001',4,'Rack A3',8],['Yezdi','Roadster','Visor','YRD-VS-001',3,'Rack A4',6],['BSA','Gold Star','Leg Guard','BSA-LG-001',5,'Rack B1',10],['BSA','Gold Star','Back Rest','BSA-BR-001',4,'Rack B2',7],['BSA','Gold Star','Bike Cover','BSA-BC-001',5,'Rack B3',3],['Yezdi','Adventure','Tank Cage','YAD-TC-001',3,'Rack C1',9],['Yezdi','Adventure','Nickel Guard','YAD-NG-001',3,'Rack C2',4],['Yezdi','Adventure','Head Light Grill','YAD-HG-001',3,'Rack C3',0]];
+ S={acc:[],tx:[],jobs:{},n:1};
+ A.forEach(a=>{const id=S.acc.length+1;S.acc.push({id,brand:a[0],model:a[1],name:a[2],code:a[3],min:a[4],loc:a[5]});if(a[6])addTx(id,'OPENING_STOCK',a[6],null,'Opening stock',true)});save();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const SIGN={OPENING_STOCK:1,STOCK_IN:1,RETURN:1,ADJUSTMENT_IN:1,ISSUE:-1,ADJUSTMENT_OUT:-1};
+let user='Admin';
+function addTx(acc,type,q,jc,rem,ns,ref){S.tx.push({id:S.n++,acc,type,q:q*SIGN[type],jc:jc||null,user,ts:new Date().toISOString(),ref:ref||'',rem:rem||''});if(!ns)save()}
+const stock=id=>S.tx.reduce((t,x)=>x.acc==id?t+x.q:t,0);
+const st=a=>{const s=stock(a.id);return s<=0?'out':s<=a.min?'low':'in'};
+const stL={in:'IN STOCK',low:'LOW STOCK',out:'OUT OF STOCK'};
+const acc=id=>S.acc.find(a=>a.id==id);
+const nm=a=>`${a.brand} ${a.model} ${a.name}`;
+const isAdmin=()=>user=='Admin', canRet=()=>user!='Staff'||true;
+let V={tab:'dash',sub:null,cart:[],g:{jc:'',cust:'',reg:''},f:'all',q:'',jq:'',open:null};
+if(!S)seed();
+function toast(m,ok){const t=$('#toast');t.textContent=m;t.style.background=ok?'var(--ok)':'var(--er)';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3500)}
+function setRole(r){user=r;go(V.tab,V.sub)}
+function go(t,s){V.tab=t;V.sub=s||null;render();scrollTo(0,0)}
+function modal(h){const m=$('#modal');m.innerHTML='<div>'+h+'</div>';m.style.display='flex'}
+function closeM(){$('#modal').style.display='none'}
+const today=()=>S.tx.filter(x=>x.ts.slice(0,10)==new Date().toISOString().slice(0,10));
+function opts(){return S.acc.map(a=>`<option value="${a.id}">${esc(nm(a))} (${stock(a.id)})</option>`).join('')}
+function render(){
+ const T=[['dash','📊','Dashboard'],['give','📤','Give Stock'],['stock','📦','Accessories'],['jobs','🧾','Job Cards'],['more','☰','More']];
+ $('#nav').innerHTML=T.map(t=>`<a href="#" class="${V.tab==t[0]?'on':''}" onclick="go('${t[0]}');return false"><span>${t[1]}</span>${t[2]}</a>`).join('');
+ $('#role').value=user;
+ const f={dash,give,stock:stockV,jobs,more}[V.tab];$('#m').innerHTML=f();
+ if(V.tab=='give')gSearch();if(V.tab=='stock')sList();if(V.tab=='jobs')jList();
+}
+function dash(){
+ const t=today(),iss=t.filter(x=>x.type=='ISSUE').reduce((s,x)=>s-x.q,0),ret=t.filter(x=>x.type=='RETURN').reduce((s,x)=>s+x.q,0);
+ const lows=S.acc.filter(a=>st(a)!='in'),jcs=new Set(t.filter(x=>x.jc).map(x=>x.jc)).size;
+ const c=(l,v)=>`<div class="card stat"><small>${l}</small><div>${v}</div></div>`;
+ return `<div class="row" style="gap:10px"><button onclick="go('give')">+ GIVE STOCK</button><button class="s" onclick="go('more','recv')">+ RECEIVE</button></div><br>
+ <div class="grid">${c('TOTAL ACCESSORIES',S.acc.length)}${c('AVAILABLE STOCK',S.acc.reduce((s,a)=>s+stock(a.id),0))}${c("TODAY'S ISSUES",iss)}${c("TODAY'S RETURNS",ret)}${c('LOW STOCK',S.acc.filter(a=>st(a)=='low').length)}${c('OUT OF STOCK',S.acc.filter(a=>st(a)=='out').length)}</div>
+ <div class="card"><b>Today's job cards:</b> ${jcs}</div>
+ <h3>Needs attention</h3>${lows.map(a=>`<div class="card row"><div>${esc(nm(a))}<div class="mu">${esc(a.loc)} · Min ${a.min}</div></div><div><span class="pill ${st(a)}">${stock(a.id)}</span></div></div>`).join('')||'<div class="card mu">All items are in stock.</div>'}
+ <h3>Recent transactions</h3>${S.tx.slice(-6).reverse().map(txCard).join('')}`;
+}
+function txCard(x){const a=acc(x.acc);return `<div class="card"><div class="row"><b>${esc(nm(a))}</b><b style="color:var(${x.q>0?'--ok':'--er'})">${x.q>0?'+':''}${x.q}</b></div><div class="mu">${x.type.replace('_',' ')}${x.jc?' · '+esc(x.jc):''} · ${esc(x.user)} · ${new Date(x.ts).toLocaleString()}${x.rem?'<br>'+esc(x.rem):''}</div></div>`}
+/* GIVE */
+function give(){
+ const g=V.g;
+ return `<h3>Give Accessories</h3><div class="card"><label>Job Card Number *</label><input id="jc" value="${esc(g.jc)}" placeholder="JC-1025" oninput="V.g.jc=this.value">
+ <label>Customer Name</label><input value="${esc(g.cust)}" oninput="V.g.cust=this.value"><label>Registration Number</label><input value="${esc(g.reg)}" oninput="V.g.reg=this.value"></div>
+ <div class="card"><label>Search accessory (name, code, brand, model, rack)</label><input id="gq" oninput="gSearch()" placeholder="e.g. leg, road, YRD"><div id="gres"></div></div>
+ <div class="card"><b>Items on this job card</b><div id="cart">${cartH()}</div></div>
+ <button onclick="confirmIssue()">COMPLETE ISSUE</button>`;
+}
+const match=(a,q)=>{q=q.toLowerCase().trim();return !q||[a.name,a.code,a.brand,a.model,a.loc].join(' ').toLowerCase().includes(q)};
+function gSearch(){const q=($('#gq')||{}).value||'';$('#gres').innerHTML=S.acc.filter(a=>match(a,q)).slice(0,8).map(a=>`<div class="card"><div class="row"><div>${esc(nm(a))}<div class="mu">${esc(a.code)} · ${esc(a.loc)}</div></div><span class="pill ${st(a)}">Available: ${stock(a.id)}</span></div>
+ <div class="row" style="margin-top:8px"><input id="q${a.id}" type="number" min="1" value="1" inputmode="numeric" style="width:90px;margin:0"><button class="sm" onclick="addItem(${a.id})">+ ADD</button></div></div>`).join('')||'<div class="mu">No accessory found.</div>'}
+function inCart(id){return V.cart.filter(c=>c.id==id).reduce((s,c)=>s+c.q,0)}
+function addItem(id){const q=parseInt($('#q'+id).value,10);if(!(q>0))return toast('Quantity must be greater than 0.');const av=stock(id)-inCart(id);if(q>av)return toast(`Insufficient stock. Only ${av} units are available.`);const c=V.cart.find(c=>c.id==id);c?c.q+=q:V.cart.push({id,q});$('#cart').innerHTML=cartH();toast('Added to list',true)}
+function cartH(){return V.cart.map((c,i)=>`<div class="row" style="padding:8px 0"><div>${esc(nm(acc(c.id)))} × <b>${c.q}</b></div><button class="s sm" onclick="V.cart.splice(${i},1);$('#cart').innerHTML=cartH()">✕</button></div>`).join('')+`<div class="mu">${V.cart.reduce((s,c)=>s+c.q,0)} accessories</div>`}
+function confirmIssue(){
+ const jc=V.g.jc.trim().toUpperCase();if(!jc)return toast('Job Card Number is required.');if(!V.cart.length)return toast('Please select an accessory.');
+ for(const c of V.cart)if(c.q>stock(c.id))return toast(`Insufficient stock. Only ${stock(c.id)} units are available.`);
+ modal(`<h3>Confirm Issue</h3><b>Job Card:</b> ${esc(jc)}<br>${V.cart.map(c=>`${esc(nm(acc(c.id)))} × ${c.q}`).join('<br>')}<br><br><b>Total: ${V.cart.reduce((s,c)=>s+c.q,0)}</b><br><br><div class="row" style="gap:10px"><button class="s" onclick="closeM()">CANCEL</button><button onclick="doIssue()">CONFIRM ISSUE</button></div>`)}
+function doIssue(){
+ const jc=V.g.jc.trim().toUpperCase();
+ for(const c of V.cart)if(c.q>stock(c.id)){closeM();return toast(`Insufficient stock. Only ${stock(c.id)} units are available.`)}
+ const first=acc(V.cart[0].id);S.jobs[jc]=Object.assign(S.jobs[jc]||{},{cust:V.g.cust,reg:V.g.reg,veh:first.brand+' '+first.model});
+ V.cart.forEach(c=>addTx(c.id,'ISSUE',c.q,jc,'',true,jc));save();
+ const sum=V.cart.map(c=>`${esc(nm(acc(c.id)))} × ${c.q}`).join('<br>');V.cart=[];V.g={jc:'',cust:'',reg:''};
+ modal(`<h3 style="color:var(--ok)">✔ Accessory successfully issued</h3><b>${esc(jc)}</b><br>${sum}<br><br><button onclick="closeM();go('dash')">DONE</button>`);render();}
+/* STOCK */
+function stockV(){return `<h3>Accessories</h3><input id="sq" placeholder="Search..." oninput="V.q=this.value;sList()" value="${esc(V.q)}"><div class="chips">${['all','low','out','in'].map(f=>`<button class="${V.f==f?'':'s'}" onclick="V.f='${f}';render()">${{all:'All',low:'Low Stock',out:'Out of Stock',in:'In Stock'}[f]}</button>`).join('')}</div>${isAdmin()?'<button class="s" onclick="go(\'more\',\'add\')">+ Add accessory</button><br><br>':''}<div id="sl"></div>`}
+function sList(){$('#sl').innerHTML=S.acc.filter(a=>match(a,V.q)&&(V.f=='all'||st(a)==V.f)).map(a=>`<div class="card"><div class="row"><b>${esc(nm(a))}</b><span class="pill ${st(a)}">${stL[st(a)]}</span></div><div class="row"><span class="big">${stock(a.id)}</span><span class="mu">Min ${a.min} · ${esc(a.loc)}<br>${esc(a.code)}</span></div></div>`).join('')||'<div class="mu">Nothing found.</div>'}
+/* JOBS */
+function jobs(){return `<h3>Job Cards</h3><input placeholder="Job card, registration or customer" value="${esc(V.jq)}" oninput="V.jq=this.value;jList()"><div id="jl"></div>`}
+function jList(){
+ if(V.open){const jc=V.open,j=S.jobs[jc]||{},t=S.tx.filter(x=>x.jc==jc),m={};t.forEach(x=>{m[x.acc]=m[x.acc]||{i:0,r:0};x.type=='ISSUE'?m[x.acc].i-=x.q:m[x.acc].r+=x.q});
+  const I=Object.values(m).reduce((s,v)=>s+v.i,0),R=Object.values(m).reduce((s,v)=>s+v.r,0);
+  $('#jl').innerHTML=`<button class="s" onclick="V.open=null;jList()">← Back</button><div class="card"><b class="big">${esc(jc)}</b><div class="mu">${esc(j.cust||'–')} · ${esc(j.reg||'–')} · ${esc(j.veh||'')}</div></div>`+Object.keys(m).map(id=>`<div class="card row"><div>${esc(nm(acc(id)))}</div><div>Given ${m[id].i}${m[id].r?' · Ret '+m[id].r:''}</div></div>`).join('')+`<div class="card">Issued: <b>${I}</b> · Returns: <b>${R}</b> · Net: <b>${I-R}</b><div class="mu">${t.map(x=>esc(x.user)+' '+new Date(x.ts).toLocaleString()).slice(0,1)}</div></div>`;return}
+ const q=V.jq.toLowerCase(),ks=Object.keys(S.jobs).filter(k=>!q||(k+' '+S.jobs[k].cust+' '+S.jobs[k].reg).toLowerCase().includes(q));
+ $('#jl').innerHTML=ks.reverse().map(k=>`<div class="card" onclick="V.open='${esc(k)}';jList()"><b>${esc(k)}</b><div class="mu">${esc(S.jobs[k].cust||'')} ${esc(S.jobs[k].reg||'')} · ${esc(S.jobs[k].veh||'')}</div></div>`).join('')||'<div class="mu">No job cards yet.</div>'}
+/* MORE */
+function more(){
+ const s=V.sub;
+ if(!s)return `<h3>More</h3>${[['recv','📥 Receive Stock'],['ret','↩️ Return Accessories'],['adj','⚖️ Stock Adjustment (Admin)'],['mov','📜 Stock Movement'],['exp','⬇️ Export CSV'],['add','➕ Add Accessory (Admin)']].map(b=>`<button class="s" style="margin-bottom:10px;text-align:left" onclick="go('more','${b[0]}')">${b[1]}</button>`).join('')}<button class="s" onclick="if(confirm('Reset all demo data?')){localStorage.removeItem(KEY);S=null;seed();go('dash')}">Reset demo data</button>`;
+ const back=`<button class="s" onclick="go('more')">← Back</button><br><br>`;
+ if(s=='recv')return back+`<h3>Receive Stock</h3><div class="card"><label>Accessory</label><select id="a">${opts()}</select><label>Quantity</label><input id="q" type="number" min="1" inputmode="numeric"><label>Supplier</label><input id="su"><label>Invoice Number</label><input id="iv"><label>Remarks</label><input id="rm"><button onclick="doRecv()">RECEIVE STOCK</button></div>`;
+ if(s=='ret')return back+`<h3>Return Accessories</h3><div class="card"><label>Job Card Number</label><input id="jc"><label>Accessory</label><select id="a">${opts()}</select><label>Quantity</label><input id="q" type="number" min="1" inputmode="numeric" value="1"><label>Reason</label><input id="rs"><button onclick="doRet()">RETURN TO STOCK</button></div>`;
+ if(s=='adj'){if(!isAdmin())return back+'<div class="card">Only Admin can adjust stock.</div>';return back+`<h3>Stock Adjustment</h3><div class="card"><label>Accessory</label><select id="a">${opts()}</select><label>Physical stock count</label><input id="q" type="number" min="0" inputmode="numeric"><label>Reason *</label><input id="rs"><button onclick="doAdj()">SAVE ADJUSTMENT</button></div>`}
+ if(s=='add'){if(!isAdmin())return back+'<div class="card">Only Admin can add accessories.</div>';return back+`<h3>Add Accessory</h3><div class="card">${[['b','Brand'],['m','Model'],['n','Accessory name'],['c','Accessory code'],['l','Rack / location']].map(f=>`<label>${f[1]}</label><input id="${f[0]}">`).join('')}<label>Minimum stock</label><input id="mn" type="number" value="5"><label>Opening stock</label><input id="q" type="number" value="0"><button onclick="doAdd()">SAVE ACCESSORY</button></div>`}
+ if(s=='mov')return back+`<h3>Stock Movement</h3>`+S.tx.slice(-100).reverse().map(txCard).join('');
+ if(s=='exp')return back+`<h3>Export</h3><button onclick="exp('stock')">Current stock (CSV)</button><br><br><button onclick="exp('tx')">All transactions (CSV)</button>`;
+}
+const val=id=>($('#'+id)||{}).value||'';
+function doRecv(){const id=+val('a'),q=parseInt(val('q'),10);if(!(q>0))return toast('Quantity must be greater than 0.');addTx(id,'STOCK_IN',q,null,'Supplier: '+val('su')+' '+val('rm'),false,val('iv'));toast('New stock: '+stock(id),true);go('more','recv')}
+function doRet(){const jc=val('jc').trim().toUpperCase(),id=+val('a'),q=parseInt(val('q'),10);if(!jc)return toast('Job Card Number is required.');if(!(q>0))return toast('Quantity must be greater than 0.');
+ const net=S.tx.filter(x=>x.jc==jc&&x.acc==id).reduce((s,x)=>s-x.q,0);if(q>net)return toast(`Only ${net} of this accessory is out on ${jc}.`);
+ addTx(id,'RETURN',q,jc,val('rs'),false,jc);toast('Returned. Stock: '+stock(id),true);go('more','ret')}
+function doAdj(){if(!isAdmin())return toast('Admin permission required.');const id=+val('a'),p=parseInt(val('q'),10);if(isNaN(p)||p<0)return toast('Enter the physical stock count.');if(!val('rs').trim())return toast('A reason is required.');const d=p-stock(id);if(!d)return toast('No difference to adjust.');addTx(id,d>0?'ADJUSTMENT_IN':'ADJUSTMENT_OUT',Math.abs(d),null,val('rs'));toast('Adjusted by '+d,true);go('more','adj')}
+function doAdd(){if(!isAdmin())return toast('Admin permission required.');const c=val('c').trim();if(!c||!val('n').trim())return toast('Code and name are required.');if(S.acc.some(a=>a.code==c))return toast('That code already exists.');const id=S.acc.length+1;S.acc.push({id,brand:val('b'),model:val('m'),name:val('n'),code:c,min:+val('mn')||0,loc:val('l')});const o=parseInt(val('q'),10);if(o>0)addTx(id,'OPENING_STOCK',o);save();toast('Accessory added',true);go('stock')}
+async function exp(k){
+ const rows=k=='stock'?[['Code','Accessory','Brand','Model','Stock','Min','Location']].concat(S.acc.map(a=>[a.code,a.name,a.brand,a.model,stock(a.id),a.min,a.loc])):[['ID','Date','Accessory','Type','Qty','JobCard','User','Remarks']].concat(S.tx.map(x=>[x.id,x.ts,nm(acc(x.acc)),x.type,x.q,x.jc||'',x.user,x.rem]));
+ const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+ try{const d=await claude.use('downloads');if(!d)throw {code:'unavailable'};await d.save({filename:k+'.csv',data:csv});toast('Saved',true)}catch(e){if(e&&e.code=='declined')return;showCsv(csv)}}
+function showCsv(csv){modal(`<h3>Copy your data</h3><div class="mu">Direct download isn't available on this device. Copy this and paste it into Excel, Google Sheets or Notes.</div><textarea id="csvt" rows="8" readonly>${esc(csv)}</textarea><div class="row" style="gap:10px"><button class="s" onclick="closeM()">CLOSE</button><button onclick="copyCsv()">COPY</button></div>`)}
+function copyCsv(){const t=$('#csvt');t.select();try{navigator.clipboard.writeText(t.value).then(()=>toast('Copied',true),()=>{document.execCommand('copy');toast('Copied',true)})}catch(e){document.execCommand('copy');toast('Copied',true)}}
+render();
+</script></body></html>
